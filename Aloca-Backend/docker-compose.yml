@@ -1,0 +1,63 @@
+services:
+  aloca-db:
+    image: mysql:8.0
+    container_name: aloca_mysql_db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root_password_123
+      MYSQL_DATABASE: aloca_management_db
+      MYSQL_USER: aloca_user
+      MYSQL_PASSWORD: aloca_password_123
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./migrate:/docker-entrypoint-initdb.d
+    networks:
+      - aloca-network
+
+  aloca-backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: aloca_express_backend
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - NODE_ENV=production
+      - DB_HOST=aloca-db
+      - DB_PORT=3306
+      - DB_USER=aloca_user
+      - DB_PASSWORD=aloca_password_123
+      - DB_NAME=aloca_management_db
+      - JWT_SECRET=aloca_jwt_secret_super_panjang_dan_aman_2024
+      - JWT_EXPIRES_IN=7d
+      - CORS_ORIGIN=*
+    depends_on:
+      - aloca-db
+    networks:
+      - aloca-network
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: aloca_phpmyadmin
+    restart: always
+    ports:
+      - "8080:80"
+    environment:
+      PMA_HOST: aloca-db
+      PMA_USER: root
+      PMA_PASSWORD: root_password_123
+    depends_on:
+      - aloca-db
+    networks:
+      - aloca-network
+
+volumes:
+  mysql_data:
+
+networks:
+  aloca-network:
+    driver: bridge
